@@ -1,13 +1,13 @@
 'use client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
-export default function ReviewPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default function ReviewPage() {
   const router = useRouter();
+  const params = useParams();                 // ← grab /[slug] from the hook
+  const slug = params.slug as string;
 
   function handleAccept() {
-    // 🔜  In the next step we’ll call Stripe here.
-    // For now, just bounce to a placeholder
+    // 🔜 will call Stripe in the next step
     router.push(`/api/placeholder-redirect?slug=${slug}`);
   }
 
@@ -16,8 +16,6 @@ export default function ReviewPage({ params }: { params: { slug: string } }) {
       <h1>Review your order</h1>
 
       <p>Everything look good for <strong>order #{slug}</strong>?</p>
-
-      {/* later we’ll show title, price, etc. */}
 
       <label style={{display:'flex',gap:8,margin:'24px 0'}}>
         <input type="checkbox" id="agree" />
