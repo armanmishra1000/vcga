@@ -5,7 +5,7 @@ import { mongo } from '../../../lib/mongo';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// POST body: { items:[{ _id,title,price }], currency? }
+// POST body: { items:[{ _id,title,price,description?,imageUrl? }], currency? }
 export async function POST(req: NextRequest) {
   try {
     const { items = [], currency = 'usd' } = await req.json();
@@ -19,26 +19,30 @@ export async function POST(req: NextRequest) {
       price_data: {
         currency,
         unit_amount: Math.round(Number(it.price) * 100),
-        product_data: { name: it.title },
+        product_data: {
+          name   : it.title,
+          images : it.imageUrl ? [it.imageUrl] : undefined,
+          description: it.description || undefined,
+        },
       },
       quantity: 1,
     }));
 
     const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items,
-      metadata: { slug },
+      mode       : 'payment',
+      line_items ,
+      metadata   : { slug },
       success_url: `https://pay.vcga.uk/success?slug=${slug}`,
       cancel_url : `https://pay.vcga.uk/cancel?slug=${slug}`,
     });
 
     await mongo.db('checkout').collection('orders').insertOne({
       slug,
-      items,
+      items,                      // ⬅️ now includes description & imageUrl
       currency,
       status   : 'pending',
       sessionId: session.id,
-      paymentIntentId: session.payment_intent,         // 👈 store it
+      paymentIntentId: session.payment_intent,
       createdAt: new Date(),
     });
 

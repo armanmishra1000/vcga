@@ -1,24 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mongo } from '../../../lib/mongo';
 
-const coll = mongo.db('checkout').collection('products');
-
-// GET  ➜ list all products
-// POST ➜ body { title:string, price:number }
-export async function GET() {
-  const list = await coll.find().sort({ createdAt: -1 }).toArray();
-  return NextResponse.json(list);
-}
-
+/**
+ * POST { slug }
+ * Returns { items:[{title,price,description?,imageUrl?}], total, currency, sessionId }
+ * Items come directly from the stored order document.
+ */
 export async function POST(req: NextRequest) {
-  const { title, price } = await req.json();
-  if (!title || !price) {
-    return NextResponse.json({ error: 'Missing title or price' }, { status: 400 });
+  const { slug } = await req.json();
+  if (!slug) {
+    return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
   }
-  const doc = await coll.insertOne({
-    title,
-    price: Number(price),
-    createdAt: new Date(),
+
+  const order = await mongo
+    .db('checkout')
+    .collection('orders')
+    .findOne({ slug });
+
+  if (!order) {
+    return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  }
+
+  // If this is a legacy single-item order, fabricate an items array.
+  const items =
+    order.items ??
+    [{ title: order.title, price: order.price }];
+
+  const total = items.reduce(
+    (sum: number, it: any) => sum + Number(it.price),
+    0,
+  );
+
+  return NextResponse.json({
+    items,
+    total,
+    currency : order.currency ?? 'usd',
+    sessionId: order.sessionId,
   });
-  return NextResponse.json({ _id: doc.insertedId, title, price });
 }

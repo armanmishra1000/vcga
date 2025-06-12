@@ -3,7 +3,12 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 
-type Item = { title: string; price: number };
+type Item = {
+  title      : string;
+  price      : number;
+  description?: string;
+  imageUrl?  : string;
+};
 
 export default function ReviewPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -45,15 +50,13 @@ export default function ReviewPage() {
     if(!sessionId) return alert('Session not ready');
     if(!email)     return alert('Email required');
 
-    /* push buyer details to server + Stripe */
-    const up = await fetch('/api/update-session',{
+    const upRes = await fetch('/api/update-session',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({slug,name,email,phone})
-    }).then(r=>r.json());
-
+    });
+    const up = await upRes.json();
     if(up.error){ alert(up.error); return; }
 
-    /* redirect */
     const stripe = await loadStripe(
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
     );
@@ -65,36 +68,41 @@ export default function ReviewPage() {
   if(loading) return <p style={{textAlign:'center',marginTop:60}}>Loading…</p>;
 
   return(
-    <main style={{maxWidth:560,margin:'3rem auto',fontFamily:'sans-serif'}}>
+    <main style={{maxWidth:680,margin:'3rem auto',fontFamily:'sans-serif'}}>
       <h1 style={{textAlign:'center'}}>Review your order</h1>
-
       {err && <p style={{color:'tomato'}}>{err}</p>}
 
-      {/* product table */}
-      <table style={{width:'100%',marginTop:24,borderCollapse:'collapse'}}>
-        <thead><tr>
-          <th align="left">Product</th>
-          <th align="right" style={{width:90}}>Price</th>
-        </tr></thead>
-        <tbody>
-          {items.map((it,i)=>(
-            <tr key={i}>
-              <td>{it.title}</td>
-              <td align="right">
-                {currency.toUpperCase()} {it.price}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td><strong>Total</strong></td>
-            <td align="right"><strong>
-              {currency.toUpperCase()} {total}
-            </strong></td>
-          </tr>
-        </tfoot>
-      </table>
+      {/* items list */}
+      <div style={{ display:'grid', gap:16, marginTop:24 }}>
+        {items.map((it,i)=>(
+          <div key={i} style={{
+            display:'flex', gap:16, border:'1px solid #333',
+            padding:12, borderRadius:6,
+          }}>
+            {it.imageUrl && (
+              <img
+                src={it.imageUrl}
+                alt={it.title}
+                style={{ width:64, height:64, objectFit:'cover', flexShrink:0 }}
+              />
+            )}
+            <div style={{ flex:1 }}>
+              <strong>{it.title}</strong><br/>
+              {it.description && (
+                <small style={{ opacity:.8 }}>{it.description}</small>
+              )}
+            </div>
+            <div style={{ textAlign:'right', whiteSpace:'nowrap' }}>
+              {currency.toUpperCase()} {it.price}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* total */}
+      <p style={{ textAlign:'right', marginTop:12, fontSize:18 }}>
+        <strong>Total: {currency.toUpperCase()} {total}</strong>
+      </p>
 
       {/* buyer details */}
       <div style={{display:'grid',gap:10,margin:'24px 0'}}>
