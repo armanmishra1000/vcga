@@ -1,10 +1,15 @@
 'use client';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function SuccessPage() {
+/** Tell Next.js: “don’t pre-render, always run at request time”. */
+export const dynamic = 'force-dynamic';
+
+/* ----------- small component that actually reads the params ----------- */
+function SuccessBody() {
   const params = useSearchParams();
-  const slug   = params.get('slug');          // e.g. "eqeWEU"
+  const slug   = params.get('slug');
 
   return (
     <main
@@ -33,5 +38,14 @@ export default function SuccessPage() {
         </Link>
       </p>
     </main>
+  );
+}
+
+/* ---------------------------- page export ----------------------------- */
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}>Loading…</div>}>
+      <SuccessBody />
+    </Suspense>
   );
 }
