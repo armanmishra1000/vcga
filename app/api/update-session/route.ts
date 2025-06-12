@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
-import { mongo } from '../../../lib/mongo';      // ✅ three dots
+import { mongo } from '../../../lib/mongo';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
-  /* 2️⃣ update session metadata (adds evidence for Stripe) */
+  /* 2️⃣ update SESSION metadata (optional but harmless) */
   await stripe.checkout.sessions.update(order.sessionId, {
     metadata: {
       ...(order.metadata || {}),
@@ -29,7 +29,17 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  /* 3️⃣ persist locally */
+  /* 3️⃣ update PAYMENT INTENT metadata → shows on Charge */
+  await stripe.paymentIntents.update(order.paymentIntentId, {
+    metadata: {
+      buyer_name  : name,
+      buyer_email : email,
+      buyer_phone : phone,
+      slug,
+    },
+  });
+
+  /* 4️⃣ persist locally */
   await orders.updateOne(
     { slug },
     { $set: { buyer: { name, email, phone } } }

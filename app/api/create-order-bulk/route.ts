@@ -5,11 +5,11 @@ import { mongo } from '../../../lib/mongo';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// POST body: { items:[{ _id, title, price }], currency? }
+// POST body: { items:[{ _id,title,price }], currency? }
 export async function POST(req: NextRequest) {
   try {
-    const { items, currency = 'usd' } = await req.json();
-    if (!Array.isArray(items) || items.length === 0) {
+    const { items = [], currency = 'usd' } = await req.json();
+    if (items.length === 0) {
       return NextResponse.json({ error: 'No items supplied' }, { status: 400 });
     }
 
@@ -35,8 +35,10 @@ export async function POST(req: NextRequest) {
     await mongo.db('checkout').collection('orders').insertOne({
       slug,
       items,
+      currency,
       status   : 'pending',
       sessionId: session.id,
+      paymentIntentId: session.payment_intent,         // 👈 store it
       createdAt: new Date(),
     });
 

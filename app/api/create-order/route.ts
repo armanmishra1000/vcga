@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing title or price' }, { status: 400 });
     }
 
-    const slug = nanoid(6);
+    const slug  = nanoid(6);
     const items = [{ title, price: Number(price) }];
 
     const session = await stripe.checkout.sessions.create({
@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
       currency,
       status   : 'pending',
       sessionId: session.id,
+      paymentIntentId: session.payment_intent,         // 👈 store it
       createdAt: new Date(),
     });
 
