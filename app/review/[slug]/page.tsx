@@ -31,45 +31,99 @@ export default function ReviewPage() {
     stripe?.redirectToCheckout({ sessionId });
   }
 
-  if (loading) return <p className="mt-24 text-center">Loading…</p>;
+  if (loading) return <p className="mt-24 text-center text-gray-200">Loading…</p>;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 font-sans">
-      <h1 className="text-center text-2xl font-bold">Review your order</h1>
-      {err && <p className="text-center text-red-600">{err}</p>}
+    <div className="mx-auto max-w-3xl space-y-10 py-12 md:py-16 font-sans">
+      {/* Logo / Brand */}
+      <div className="text-center mb-8 text-3xl font-bold text-emerald-400">SEO Vally</div>
 
-      <div className="grid gap-4">
+      {/* Heading */}
+      <h1 className="text-center text-3xl md:text-4xl font-bold mb-8 md:mb-12">Review your order</h1>
+
+      {err && <p className="bg-red-700 text-white p-4 rounded-md text-center my-6">{err}</p>}
+
+      {/* Items */}
+      <div className="space-y-6">
         {items.map((it, i) => (
-          <div key={i} className="flex gap-4 rounded border p-4">
-            {it.imageUrl && <img src={it.imageUrl} alt={it.title} className="h-16 w-16 object-cover" />}
+          <div
+            key={i}
+            className="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-zinc-800 rounded-lg p-6 shadow-lg"
+          >
+            {it.imageUrl && (
+              <img
+                src={it.imageUrl}
+                alt={it.title}
+                className="w-20 h-20 object-cover rounded-md"
+              />
+            )}
             <div className="flex-1">
-              <div className="font-semibold">{it.title}</div>
-              {it.description && <div className="text-sm opacity-70">{it.description}</div>}
+              <div className="font-semibold text-lg text-gray-100">{it.title}</div>
+              {it.description && (
+                <div className="text-sm text-gray-400 mt-1">{it.description}</div>
+              )}
             </div>
-            <div className="whitespace-nowrap font-medium">
+            <div className="whitespace-nowrap font-semibold text-lg text-gray-100">
               {currency.toUpperCase()} {it.price}
             </div>
           </div>
         ))}
       </div>
 
-      <p className="text-right text-lg font-semibold">
+      {/* Total */}
+      <p className="text-right text-xl md:text-2xl font-bold text-gray-100 py-6 border-t border-b border-gray-700 my-8">
         Total: {currency.toUpperCase()} {total}
       </p>
 
-      <div className="grid gap-3">
-        <input className="input" placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
-        <input className="input" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input className="input" placeholder="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+      {/* Form */}
+      <div className="space-y-6">
+        <div>
+          <label htmlFor="fullName" className="block text-sm font-medium text-gray-300 mb-1">
+            Full name
+          </label>
+          <input
+            id="fullName"
+            className="input bg-white dark:bg-gray-100 border-gray-300 dark:border-gray-600 text-gray-900 placeholder-gray-500 focus:ring-emerald-500 focus:border-emerald-500 rounded-md p-3"
+            placeholder="Full name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+            Email
+          </label>
+          <input
+            id="email"
+            className="input bg-white dark:bg-gray-100 border-gray-300 dark:border-gray-600 text-gray-900 placeholder-gray-500 focus:ring-emerald-500 focus:border-emerald-500 rounded-md p-3"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-1">
+            Phone (optional)
+          </label>
+          <input
+            id="phone"
+            className="input bg-white dark:bg-gray-100 border-gray-300 dark:border-gray-600 text-gray-900 placeholder-gray-500 focus:ring-emerald-500 focus:border-emerald-500 rounded-md p-3"
+            placeholder="Phone (optional)"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </div>
       </div>
 
-      <button onClick={handlePay} className="btn-primary">
+      <button onClick={handlePay} className="btn-primary w-full text-lg py-3 mt-8">
         Pay now
       </button>
 
-      <p className="text-sm">
+      <p className="text-xs text-gray-500 text-center mt-2">Secure payment powered by Stripe</p>
+
+      <p className="text-center text-sm text-gray-400 mt-8">
         Need changes?{' '}
-        <a href="mailto:support@yourbrand.com" className="text-indigo-600 underline">
+        <a href="mailto:support@yourbrand.com" className="text-emerald-400 hover:text-emerald-300 underline">
           Contact us
         </a>
       </p>
