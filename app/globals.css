@@ -1,15 +1,15 @@
-@import "tailwindcss";
+/* Tell VS Code / the compiler this is a PostCSS (Tailwind) file */
+/* eslint-disable */
+/* stylelint-disable */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Preserve the color + font CSS variables (optional) */
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +19,15 @@
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---------- custom utility shortcuts ---------- */
+@layer utilities {
+  .input {
+    @apply block w-full rounded border border-gray-300 p-2 focus:border-indigo-500 focus:ring-indigo-500;
+  }
+  .btn-primary {
+    @apply rounded bg-black px-4 py-2 font-semibold text-white hover:bg-gray-800 disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply rounded bg-gray-300 px-4 py-2 font-semibold text-black hover:bg-gray-400;
+  }
 }

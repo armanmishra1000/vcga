@@ -1,17 +1,13 @@
 'use client';
 import { useState } from 'react';
 
-type CreateResponse = {
-  slug: string;
-  sessionUrl: string;
-};
+type CreateResponse = { slug: string; sessionUrl: string };
 
 export default function AdminCreatePage() {
-  const [title, setTitle]   = useState('');
-  const [price, setPrice]   = useState('');
+  const [title, setTitle] = useState('');
+  const [price, setPrice] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CreateResponse | null>(null);
-
   const disabled = !title || !price || loading;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -19,92 +15,72 @@ export default function AdminCreatePage() {
     setLoading(true);
     setResult(null);
 
-    try {
-      const r = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, price }),
-      });
-      const json = await r.json();
+    const r = await fetch('/api/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, price }),
+    });
+    const json = await r.json();
+    setLoading(false);
 
-      if (r.ok) {
-        setResult(json);           // { slug, sessionUrl }
-        setTitle('');
-        setPrice('');
-      } else {
-        alert(json.error || 'Server error');
-      }
-    } catch (err: any) {
-      alert(err.message || 'Network error');
-    } finally {
-      setLoading(false);
+    if (r.ok) {
+      setResult(json);
+      setTitle('');
+      setPrice('');
+    } else {
+      alert(json.error || 'Server error');
     }
   }
 
   return (
-    <main
-      style={{
-        maxWidth: 500,
-        margin: '3rem auto',
-        padding: '0 1rem',
-        fontFamily: 'sans-serif',
-      }}
-    >
-      <h1>Create checkout link</h1>
+    <div className="mx-auto max-w-md space-y-8 font-sans">
+      <h1 className="text-2xl font-bold">Create checkout link</h1>
 
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
+      <form onSubmit={handleSubmit} className="grid gap-4">
         <input
+          className="block w-full rounded border border-gray-300 p-2 focus:border-indigo-500 focus:outline-none"
           placeholder="Service title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          style={{ padding: 8, border: '1px solid #ccc', borderRadius: 4 }}
         />
-
         <input
+          className="block w-full rounded border border-gray-300 p-2 focus:border-indigo-500 focus:outline-none"
           placeholder="Price (e.g. 49.99)"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          style={{ padding: 8, border: '1px solid #ccc', borderRadius: 4 }}
         />
-
         <button
           disabled={disabled}
-          style={{
-            padding: '10px 18px',
-            background: '#000',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 4,
-            opacity: disabled ? 0.6 : 1,
-          }}
+          className="rounded bg-black px-4 py-2 text-white hover:bg-gray-800 disabled:opacity-50"
         >
           {loading ? 'Generating…' : 'Generate'}
         </button>
       </form>
 
       {result && (
-        <section style={{ marginTop: 32, wordBreak: 'break-all' }}>
-          <h2>Links to share</h2>
-
+        <section className="space-y-4 break-words">
+          <h2 className="text-lg font-semibold">Links to share</h2>
           <p>
-            Customer review page:<br />
+            <span className="font-medium">Customer review page:</span>
+            <br />
             <a
               href={`https://pay.vcga.uk/review/${result.slug}`}
               target="_blank"
               rel="noopener noreferrer"
+              className="text-indigo-600 underline"
             >
               https://pay.vcga.uk/review/{result.slug}
             </a>
           </p>
-
-          <p style={{ marginTop: 16, opacity: 0.8 }}>
-            Direct Stripe Checkout (testing):<br />
-            <a href={result.sessionUrl} target="_blank" rel="noopener noreferrer">
+          <p className="opacity-80">
+            <span className="font-medium">Direct Stripe Checkout (testing):</span>
+            <br />
+            <a href={result.sessionUrl} target="_blank" rel="noopener noreferrer" className="underline">
               {result.sessionUrl}
             </a>
           </p>
         </section>
       )}
-    </main>
+    </div>
   );
 }

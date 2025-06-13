@@ -1,0 +1,6 @@
+{
+    "css.validate": false,        // disable built-in CSS lint
+    "scss.validate": false,       // optional: turn off for SCSS too
+    "less.validate": false        // optional
+  }
+  
