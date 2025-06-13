@@ -7,21 +7,22 @@ type Prod = {
   price: number;
   description?: string;
   imageUrl?: string;
-  custom?: number;            // local UI override price
+  custom?: number; // UI-only override for link generation
 };
 
 type CreateResp = { slug: string; sessionUrl: string };
 
 export default function ProductsAdmin() {
-  /* ───── state ───── */
-  const [list, setList]   = useState<Prod[]>([]);
-  const [sel , setSel]    = useState<Record<string, boolean>>({});
+  /* ────────── state ────────── */
+  const [list, setList] = useState<Prod[]>([]);
+  const [sel, setSel]   = useState<Record<string, boolean>>({});
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [imageUrl   , setImageUrl]    = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [editingProduct, setEditingProduct] = useState<Prod | null>(null); // NEW
   const [loading, setLoading] = useState(false);
-  const [link,    setLink]    = useState<CreateResp | null>(null);
+  const [link, setLink] = useState<CreateResp | null>(null);
 
   /* fetch catalog once */
   useEffect(() => {
@@ -31,17 +32,55 @@ export default function ProductsAdmin() {
     })();
   }, []);
 
-  /* add product */
-  async function addProduct(e: any) {
-    e.preventDefault();
-    const r = await fetch('/api/products', {
-      method : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({ title, price, description, imageUrl }),
-    });
-    const p = await r.json();
-    setList([p, ...list]);
+  /* helper to clear the form */
+  function resetForm() {
     setTitle(''); setPrice(''); setDescription(''); setImageUrl('');
+    setEditingProduct(null);
+  }
+
+  /* add or update product */
+  async function handleFormSubmit(e: any) {
+    e.preventDefault();
+
+    if (!title || !price) return;
+
+    if (editingProduct) {
+      /* ---- UPDATE (PUT) ---- */
+      const r = await fetch('/api/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          _id: editingProduct._id,
+          title,
+          price,
+          description,
+          imageUrl,
+        }),
+      });
+      const updated = await r.json();
+      if (r.ok) {
+        setList(lst =>
+          lst.map(p => (p._id === updated._id ? { ...p, ...updated } : p)),
+        );
+        resetForm();
+      } else {
+        alert(updated.error || 'Update failed');
+      }
+    } else {
+      /* ---- ADD (POST) ---- */
+      const r = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, price, description, imageUrl }),
+      });
+      const p = await r.json();
+      if (r.ok) {
+        setList([p, ...list]);
+        resetForm();
+      } else {
+        alert(p.error || 'Add failed');
+      }
+    }
   }
 
   /* generate checkout link */
@@ -50,29 +89,30 @@ export default function ProductsAdmin() {
     const items = list
       .filter(p => sel[p._id])
       .map(p => ({
-        _id        : p._id,
-        title      : p.title,
-        price      : p.custom ?? p.price,
+        _id: p._id,
+        title: p.title,
+        price: p.custom ?? p.price,
         description: p.description,
-        imageUrl   : p.imageUrl,
+        imageUrl: p.imageUrl,
       }));
 
     const r = await fetch('/api/create-order-bulk', {
-      method : 'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({ items }),
+      body: JSON.stringify({ items }),
     });
+
     const j = await r.json();
     setLink(j); setLoading(false);
   }
 
-  /* ───── UI ───── */
+  /* ────────── UI ────────── */
   return (
-    <main style={{ maxWidth: 820, margin: '3rem auto', fontFamily: 'sans-serif' }}>
+    <main style={{ maxWidth: 860, margin: '3rem auto', fontFamily: 'sans-serif' }}>
       <h1>Products</h1>
 
-      {/* add product */}
-      <form onSubmit={addProduct} style={{ display:'grid', gap:8, margin:'20px 0' }}>
+      {/* add / edit form */}
+      <form onSubmit={handleFormSubmit} style={{ display:'grid', gap:8, margin:'20px 0' }}>
         <input
           placeholder="Title"
           value={title}
@@ -80,9 +120,9 @@ export default function ProductsAdmin() {
         />
         <input
           placeholder="Price"
+          type="number"
           value={price}
           onChange={e=>setPrice(e.target.value)}
-          type="number"
         />
         <input
           placeholder="Image URL"
@@ -91,11 +131,25 @@ export default function ProductsAdmin() {
         />
         <textarea
           placeholder="Description"
+          rows={2}
           value={description}
           onChange={e=>setDescription(e.target.value)}
-          rows={2}
         />
-        <button>Add</button>
+
+        <div style={{ display:'flex', gap:8 }}>
+          <button type="submit">
+            {editingProduct ? 'Update Product' : 'Add Product'}
+          </button>
+          {editingProduct && (
+            <button
+              type="button"
+              onClick={resetForm}
+              style={{ background:'#ccc', color:'#000' }}
+            >
+              Cancel Edit
+            </button>
+          )}
+        </div>
       </form>
 
       {/* table */}
@@ -104,8 +158,9 @@ export default function ProductsAdmin() {
           <tr>
             <th/>
             <th>Image</th>
-            <th>Title / Description</th>
+            <th>Details</th>
             <th style={{ width:90 }}>Price</th>
+            <th style={{ width:70 }}/>
           </tr>
         </thead>
         <tbody>
@@ -118,6 +173,7 @@ export default function ProductsAdmin() {
                   onChange={e=>setSel({...sel, [p._id]:e.target.checked})}
                 />
               </td>
+
               <td>
                 {p.imageUrl && (
                   <img
@@ -127,10 +183,12 @@ export default function ProductsAdmin() {
                   />
                 )}
               </td>
+
               <td>
                 <strong>{p.title}</strong><br/>
                 <small style={{ opacity:.8 }}>{p.description?.slice(0,80)}</small>
               </td>
+
               <td>
                 <input
                   type="number"
@@ -141,6 +199,22 @@ export default function ProductsAdmin() {
                   }}
                   style={{ width:80 }}
                 />
+              </td>
+
+              <td>
+                <button
+                  type="button"
+                  onClick={()=>{
+                    setEditingProduct(p);
+                    setTitle(p.title);
+                    setPrice(String(p.price));
+                    setDescription(p.description || '');
+                    setImageUrl(p.imageUrl || '');
+                  }}
+                  style={{ fontSize:12 }}
+                >
+                  Edit
+                </button>
               </td>
             </tr>
           ))}
